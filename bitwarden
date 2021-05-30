@@ -19,6 +19,8 @@ import tldextract
 import osascript
 import getpass
 import os
+import calendar;
+import time;
 
 # support intel and m1 based mac paths
 os.environ['PATH'] = os.pathsep + '/usr/local/bin:/usr/bin:/opt/homebrew/bin'
@@ -65,34 +67,56 @@ def ask_password():
         stdout=subprocess.PIPE
     )
 
-    session_key, error = bitwarden_process.communicate()
+    session_key, _ = bitwarden_process.communicate()
 
-    if error != None:
+    if bitwarden_process.returncode > 0:
         raise Exception('Some error ocurred when unlocking vault. Might be wrong password')
 
     return session_key.strip()
 
-def get_session_key():
+def find_from_keychain(name):
     process = subprocess.Popen(
-        ['security', 'find-generic-password', '-a', current_user, '-s bw_session', '-w'],
+        ['security', 'find-generic-password', '-a', current_user, '-s', name, '-w'],
         universal_newlines=True,
         stdout=subprocess.PIPE,
     )
-    session_key, _ = process.communicate()
+    output, _ = process.communicate()
 
     if process.returncode > 0:
-        session = ask_password()
+        return ''
 
-        if not session:
-            raise Exception('Could not unlock vault')
+    return output.strip()
 
-        # safe to keychain
-        subprocess.run(
-            ['security', 'add-generic-password', '-a', current_user, '-s bw_session', '-w', session],
-            universal_newlines=True,
-        )
+def save_to_keychain(name, value):
+    subprocess.run(
+        ['security', 'add-generic-password', '-U', '-a', current_user, '-s', name, '-w', str(value)],
+        universal_newlines=True,
+    )
 
-        session_key = session
+def has_key_expired(): 
+    current_timestamp = int(calendar.timegm(time.gmtime()))
+    lock_timestamp = find_from_keychain('bw_session_lock')
+
+    if not lock_timestamp:
+        return True
+
+    print(current_timestamp, lock_timestamp)
+
+    return current_timestamp >= int(lock_timestamp)
+
+def add_key_expiration_to_keychain():
+    current_timestamp = int(calendar.timegm(time.gmtime()))
+    # set to 15 minutes lock
+    save_to_keychain('bw_session_lock', current_timestamp + 900)
+
+def get_session_key():
+    session_key = find_from_keychain('bw_session')
+
+    if not session_key or has_key_expired():
+        session_key = ask_password() 
+
+        save_to_keychain('bw_session', session_key)
+        add_key_expiration_to_keychain()
 
     return session_key.strip()
 
