@@ -1,5 +1,7 @@
 ## How to install
 
+- Install [Bitwarden CLI](https://bitwarden.com/help/article/cli/) with the command `brew install bw`. Then you have to login before using the user script. Run in terminal `bw login`
+
 - Install [Choose Gui](https://github.com/chipsenkbeil/choose) with the command `brew install choose-gui`
 
 ### Intel macs
