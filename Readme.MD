@@ -14,7 +14,7 @@
 
 The problem is the qutebrowser uses the `/usr/local/bin/python3` version of python and you can also have python3 install
 on `/opt/homebrew/bin`. So I just installed the  `pip3 install osascript` and `pip3 install tldextract` in both `/opt/homebrew/bin/pip3` and
-on the `/usr/bin/pip3`. You can also just try the `/usr/bin/pip3` version
+on the `/usr/local/bin/pip3`. You can also just try the `/usr/local/bin/pip3` version. Mine was on the /usr/local/bin. But if that doesn't work you can try to install it on `/usr/bin/pip3`
 
 
 ### Installing for qutebrowser
